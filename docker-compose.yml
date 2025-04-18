@@ -1,0 +1,77 @@
+name: leetcode
+services:
+  client: 
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: client
+    ports:
+      - '3000:3000'
+      - '5555:5555'
+    volumes:
+      - ./client:/app
+      - /usr/src/app/node_modules
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/leetcode
+      - REDIS_URL=redis://redis:6379
+      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_SECRET="password_nextauth"
+      - GOOGLE_CLIENT_ID=7973876185-nqbfg1vshbotao42guumv6fuj1t67dgr.apps.googleusercontent.com
+      - GOOGLE_CLIENT_SECRET=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
+      - GITHUB_CLIENT_ID=Iv23li6ejyDfsj8NFeEK
+      - GITHUB_CLIENT_SECRET=520275051305ee301b102f7bfc28ecdec43fd29b
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+  server:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    container_name: worker
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./worker:/app
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/leetcode
+      - PORT=8080
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      postgres:
+       condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  postgres:
+    image: postgres
+    container_name: db
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: leetcode
+    volumes:
+      - ./postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: [ 'CMD-SHELL', 'pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}' ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  redis:
+    image: redis
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5

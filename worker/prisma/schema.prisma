@@ -1,0 +1,76 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-arm64-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String       @id @default(uuid())
+  email       String       @unique
+  username    String
+  password    String?
+  image       String?
+  Problems    Problem[]
+  Submissions Submission[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Problem {
+  id          String       @id @default(uuid())
+  title       String
+  description String
+  difficulty  String
+  authorId    String
+  testCases   testCases[]
+  Submissions Submission[]
+  author      User         @relation(fields: [authorId], references: [id])
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model testCases {
+  id           String         @id @default(uuid())
+  input        String
+  output       String
+  problemId    String?
+  submissionId String?
+  status       testCaseStatus @default(PENDING)
+  problem      Problem?       @relation(fields: [problemId], references: [id])
+  submission   Submission?    @relation(fields: [submissionId], references: [id])
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+}
+
+model Submission {
+  id        String      @id @default(uuid())
+  code      String
+  language  String
+  problemId String
+  userId    String
+  status    Status      @default(PENDING)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  testCases testCases[]
+  problem   Problem     @relation(fields: [problemId], references: [id])
+  user      User        @relation(fields: [userId], references: [id])
+}
+
+enum Status {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum testCaseStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
