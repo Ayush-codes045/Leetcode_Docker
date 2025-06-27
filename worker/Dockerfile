@@ -6,6 +6,8 @@ WORKDIR /app
 # Install Python and GCC
 RUN apt-get update && apt-get install -y python3 gcc g++
 
+RUN apt-get update -y && apt-get install -y openssl
+
 COPY package*.json ./
 
 RUN npm install typescript -g

@@ -9,6 +9,12 @@ import {
 } from "@/components/ui/card"
 import { Button } from '../ui/button'
 import { useRouter } from "next/navigation"
+
+// Utility function to strip HTML tags
+const stripHtmlTags = (html: string): string => {
+    return html.replace(/<[^>]*>/g, '');
+};
+
 interface ProblemCardProps {
 
    problem: {
@@ -21,6 +27,9 @@ interface ProblemCardProps {
 }
 const ProblemCard = ({problem}:ProblemCardProps) => {
     const router = useRouter()
+    // Strip HTML tags and get the first line of description
+    const cleanDescription = stripHtmlTags(problem.description.split('<br />')[0]);
+    
 return (
     <Card className='w-[40vw]'>
         <CardHeader>
@@ -28,7 +37,7 @@ return (
         </CardHeader>
         <CardContent>
             <CardDescription>
-                {problem.description.split('<br />')[0]}
+                <span dangerouslySetInnerHTML={{ __html: problem.description.split('<br />')[0] }} />
             </CardDescription>
         </CardContent>
         <CardFooter>

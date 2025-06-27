@@ -31,8 +31,6 @@ interface DescriptionProps {
 }
 const EditorSection =({problem}:DescriptionProps) => {
   const [code, setCode] = useState<Record<string, string>>({
-    javascript: "",
-    python: "",
     cpp: "",
   });
   const [loading, setLoading] = useState(false);
@@ -45,7 +43,7 @@ const EditorSection =({problem}:DescriptionProps) => {
     try {
       setLoading(true)
       // @ts-ignore
-    const id = await compileCode(problem.id,code[language],language,problem?.testCases,session?.user?.id ,problem?.difficulty)
+    const id = await compileCode(problem.id,code["cpp"],"cpp",problem?.testCases,session?.user?.id ,problem?.difficulty)
     if(id){
       let count = 0;
       let status = await checkCompilation(id);
@@ -67,7 +65,6 @@ const EditorSection =({problem}:DescriptionProps) => {
       console.log(error)
     }
   }
-  const language = lang === "JavaScript" ? "javascript" : lang=== "Python" ? "python" : "cpp";
   return (
     <div className="p-5">
       <div className=" pb-4  font-semibold">Solve the problem</div>
@@ -88,10 +85,6 @@ const EditorSection =({problem}:DescriptionProps) => {
           <DropdownMenuLabel>Language</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuRadioGroup value={lang} onValueChange={setLang}>
-            <DropdownMenuRadioItem value="JavaScript">
-              JavaScript
-            </DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="Python">Python</DropdownMenuRadioItem>
             <DropdownMenuRadioItem value="C++">C++</DropdownMenuRadioItem>
           </DropdownMenuRadioGroup>
         </DropdownMenuContent>
@@ -99,7 +92,7 @@ const EditorSection =({problem}:DescriptionProps) => {
       <div className="py-4">
       <Editor className=" rounded-xl"
           height={"60vh"}
-          value={code[language]}
+          value={code["cpp"]}
           theme="vs-dark"
           onMount={() => { }}
           options={{
@@ -111,10 +104,10 @@ const EditorSection =({problem}:DescriptionProps) => {
             automaticLayout: true,
             scrollbar: { alwaysConsumeMouseWheel: false },
           }}
-          language={language}
+          language="cpp"
           onChange={(value) => {
             //@ts-ignore
-            setCode({ ...code, [language]: value });
+            setCode({ ...code, ["cpp"]: value });
           }}
           defaultLanguage="cpp"
         />

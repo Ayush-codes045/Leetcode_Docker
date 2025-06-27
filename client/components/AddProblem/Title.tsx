@@ -22,7 +22,7 @@ import { useRouter } from "next/navigation";
 
 const Title = () => {
   const [difficulty, setDifficulty] = React.useState("Easy");
-  const {title,description,testCases} = useContent()
+  const {title,description,testCases,resetContent} = useContent()
   const session = useSession()
   const router = useRouter()
   const publish = async() => {
@@ -30,6 +30,7 @@ const Title = () => {
       const id = (session.data?.user as { id?: string })?.id || ""
       if(!title || !description || !testCases) return toast("Please fill all the fields")
       await PublishAction(title,description,testCases, id, difficulty)
+      resetContent();
       router.push("/")
     }
   };

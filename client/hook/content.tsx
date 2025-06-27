@@ -10,6 +10,7 @@ export const AddProblemContext = React.createContext<{
   >;
   title: string; // Add the 'title' property
   setTitle: React.Dispatch<React.SetStateAction<string>>; // Add the 'setTitle' property
+  resetContent: () => void;
 }>({
   description: "",
   setDescription: () => {},
@@ -17,11 +18,17 @@ export const AddProblemContext = React.createContext<{
   setTestCases: () => {},
   title: "", // Initialize the 'title' property
   setTitle: () => {}, // Initialize the 'setTitle' property
+  resetContent: () => {},
 });
 const ContentProvider = ({ children }: { children: React.ReactNode }) => {
   const [description, setDescription] = useState("");
   const [testCases, setTestCases] = React.useState([{ input: "", output: "" }]);
   const [title, setTitle] = useState("");
+  const resetContent = () => {
+    setDescription("");
+    setTestCases([{ input: "", output: "" }]);
+    setTitle("");
+  };
   return (
     <AddProblemContext.Provider
       value={{
@@ -31,6 +38,7 @@ const ContentProvider = ({ children }: { children: React.ReactNode }) => {
         setTestCases,
         title,
         setTitle,
+        resetContent,
       }}
     >
       {children}

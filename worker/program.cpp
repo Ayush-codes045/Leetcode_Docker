@@ -1,7 +1,10 @@
 #include<iostream>
 using namespace std;
 int main(){
-    int a,b;
-    cin>>a>>b;
-    cout<<3;
+    int a;
+    cin>>a;
+    int b;
+    cin>>b;
+    int sum=a+b;
+    cout<<sum;
 }
