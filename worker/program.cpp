@@ -5,6 +5,6 @@ int main(){
     cin>>a;
     int b;
     cin>>b;
-    int sum=a+b;
-    cout<<sum;
+    int sub=a-b;
+    cout<<sub;
 }

@@ -6,6 +6,8 @@ const prisma = new PrismaClient();
 const client = createClient({ url: process.env.REDIS_URL });
 
 async function ExicuteCode(sub: any, lang: string, problemId: string) {
+  lang = lang.trim().toLowerCase();
+  console.log("LANG RECEIVED (after normalization):", lang);
   if (lang === "cpp") {
     const { code, testCases } = sub;
     const inputDir = "";
