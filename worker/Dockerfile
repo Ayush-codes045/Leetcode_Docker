@@ -16,6 +16,8 @@ COPY . .
 
 RUN npm install -f
 
+# Generate Prisma Client with correct binary targets for Linux container
+RUN npx prisma generate
 
 EXPOSE 8080
 RUN npm run build

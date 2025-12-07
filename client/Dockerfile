@@ -10,6 +10,9 @@ COPY prisma ./prisma
 
 RUN  npm install -f
 
+# Generate Prisma Client with correct binary targets for Linux container
+RUN npx prisma generate
+
 COPY . .
 
 EXPOSE 3000
