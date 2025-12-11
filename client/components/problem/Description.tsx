@@ -94,20 +94,23 @@ const Description = ({ problem }: DescriptionProps) => {
 
   return (
     <div className='px-5 py-6'>
-      <div className='flex items-center'>
-        <h1 className='text-xl font-bold p-5 px-3'>{problem?.title}</h1>
+      <div className='flex items-center justify-between pr-4'>
+        <div>
+          <h1 className='text-2xl font-bold px-3 text-slate-900'>{problem?.title}</h1>
+          <p className='px-3 text-sm text-slate-600'>Work through the description and solve using the editor.</p>
+        </div>
         <h2>
           <Badge
             variant="outline"
             className={`${
               problem?.difficulty === 'Easy'
-                ? 'bg-green-300'
+                ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
                 : problem?.difficulty === 'Medium'
-                ? 'bg-yellow-300'
+                ? 'bg-amber-100 text-amber-800 border-amber-200'
                 : problem?.difficulty === 'Hard'
-                ? 'bg-red-300'
-                : 'white'
-            } text-black`}
+                ? 'bg-rose-100 text-rose-800 border-rose-200'
+                : 'bg-slate-100 text-slate-800 border-slate-200'
+            }`}
           >
             {problem?.difficulty}
           </Badge>
@@ -118,13 +121,13 @@ const Description = ({ problem }: DescriptionProps) => {
         {parsedLines?.map((item, index) => {
           if (typeof item === 'string') {
             return (
-              <p className='text-base leading-relaxed' key={index}>
+              <p className='text-base leading-relaxed text-slate-800' key={index}>
                 {item}
               </p>
             );
           } else if (item.type === 'bold') {
             return (
-              <p className='text-base font-bold leading-relaxed' key={index}>
+              <p className='text-base font-bold leading-relaxed text-slate-900' key={index}>
                 {item.text}
               </p>
             );

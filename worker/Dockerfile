@@ -4,7 +4,7 @@ FROM node:20-slim
 WORKDIR /app
 
 # Install Python and GCC
-RUN apt-get update && apt-get install -y python3 gcc g++
+RUN apt-get update && apt-get install -y python3 gcc g++ openjdk-17-jdk
 
 RUN apt-get update -y && apt-get install -y openssl
 

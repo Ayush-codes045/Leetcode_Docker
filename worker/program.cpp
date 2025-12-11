@@ -2,9 +2,9 @@
 using namespace std;
 int main(){
     int a;
-    int b;
     cin>>a;
+    int b;
     cin>>b;
-    int result=a+b;
-    cout<<result;
+    int sub=a-b;
+    cout<<sub;
 }

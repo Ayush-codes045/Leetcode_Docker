@@ -41,12 +41,12 @@ const Title = () => {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button className="flex gap-2">
-              <div>Difficulty</div>
+              <div>Difficulty: {difficulty}</div>
               <MdOutlineArrowDropDown size={20} className=" text-white" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56">
-            <DropdownMenuLabel>Panel Position</DropdownMenuLabel>
+            <DropdownMenuLabel>Select difficulty</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuRadioGroup
               value={difficulty}

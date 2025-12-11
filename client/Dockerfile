@@ -2,7 +2,7 @@ FROM node:22-slim
 
 WORKDIR /app
 
-
+RUN apt-get update && apt-get install -y python3 gcc g++ openjdk-17-jdk
 RUN apt-get update -y && apt-get install -y openssl
 
 COPY package.json package-lock.json ./
