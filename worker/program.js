@@ -1,6 +1,18 @@
-     const fs = require("fs");
-     const data = fs.readFileSync(0, "utf8").trim().split(/\s+/).map(Number);
-     if (data.length >= 2) {
-       const [a, b] = data;
-       console.log(a - b);
-     }
+const readline = require('readline');
+
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
+
+rl.on('line', (line) => {
+    // Split by spaces and convert to numbers
+    const nums = line.split(' ').map(Number);
+    
+    // Sum all elements
+    const sum = nums.reduce((acc, num) => acc + num, 0);
+    
+    // Output the result
+    console.log(sum);
+    rl.close();
+});

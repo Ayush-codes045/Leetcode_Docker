@@ -7,7 +7,10 @@ export async function getSubmission(userId: any,problemId:string) {
             where:{
                 problemId:problemId,
                 userId:userId.session
-            }
+            },
+            orderBy: {
+                createdAt: "desc", // optional
+              },
         })
         return submission
     } catch (error) {

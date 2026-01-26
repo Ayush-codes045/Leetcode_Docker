@@ -1,11 +1,16 @@
-     import java.util.*;
-     class Main {
-       public static void main(String[] args) {
-         Scanner sc = new Scanner(System.in);
-         if (!sc.hasNextLong()) return;
-         long a = sc.nextLong();
-         if (!sc.hasNextLong()) return;
-         long b = sc.nextLong();
-         System.out.println(a - b);
-       }
-     }
+import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        int sum = 0;
+        
+        // Read space-separated integers
+        while(scanner.hasNextInt()) {
+            sum += scanner.nextInt();
+        }
+        
+        System.out.println(sum);
+        scanner.close();
+    }
+}

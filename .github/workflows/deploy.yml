@@ -1,0 +1,259 @@
+name: Deploy to Staging # version 1.0.1
+
+on:
+  push:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-push:
+    name: Build and Push to ECR
+    runs-on: ubuntu-latest
+    outputs:
+      registry: ${{ steps.login-ecr.outputs.registry }}
+      image_tag: ${{ steps.image_tag.outputs.sha }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Create Image Tag
+      id: image_tag
+      run: echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+    - name: Build and Push Client Image
+      id: build-client-image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        IMAGE_TAG: ${{ steps.image_tag.outputs.sha }}
+      run: |
+        # Build client image
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY-client:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY-client:latest ./client
+        
+        # Push client image
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY-client:$IMAGE_TAG
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY-client:latest
+
+    - name: Build and Push Worker Image
+      id: build-worker-image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        IMAGE_TAG: ${{ steps.image_tag.outputs.sha }}
+      run: |
+        # Build worker image
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY-worker:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY-worker:latest ./worker
+        
+        # Push worker image
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY-worker:$IMAGE_TAG
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY-worker:latest
+
+  deploy:
+    name: Deploy to EC2
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Copy docker-compose.yml to Server
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        source: "docker-compose.yml"
+        target: "~/apps/leetcode-docker/"
+
+    - name: Execute Remote Deployment
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        script: |
+          mkdir -p ~/apps/leetcode-docker
+          cd ~/apps/leetcode-docker
+          
+          # ===== STEP 0a: Install Docker if not present =====
+          if ! command -v docker &> /dev/null; then
+            echo "Installing Docker..."
+            sudo apt-get update -qq
+            sudo apt-get install -y ca-certificates curl gnupg
+            sudo install -m 0755 -d /etc/apt/keyrings
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+            sudo chmod a+r /etc/apt/keyrings/docker.gpg
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+            sudo apt-get update -qq
+            sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+            sudo usermod -aG docker $USER
+            sudo systemctl enable docker
+            sudo systemctl start docker
+          fi
+          
+          # ===== STEP 0b: Install AWS CLI if not present =====
+          if ! command -v aws &> /dev/null; then
+            echo "Installing AWS CLI..."
+            # Install unzip if not present
+            if ! command -v unzip &> /dev/null; then
+              sudo apt-get update -qq
+              sudo apt-get install -y unzip
+            fi
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip -q awscliv2.zip
+            sudo ./aws/install
+            rm -rf aws awscliv2.zip
+          fi
+          
+          # ===== STEP 1: Setup AWS Credentials =====
+          export AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}"
+          export AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+          export AWS_DEFAULT_REGION="${{ secrets.AWS_REGION }}"
+          
+          # ===== STEP 2: Construct ECR Registry URL =====
+          AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          ECR_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com"
+          ECR_REPOSITORY="${{ secrets.ECR_REPOSITORY }}"
+          CLIENT_IMAGE="${ECR_REGISTRY}/${ECR_REPOSITORY}-client:latest"
+          WORKER_IMAGE="${ECR_REGISTRY}/${ECR_REPOSITORY}-worker:latest"
+          
+          echo "=========================================="
+          echo "AWS_ACCOUNT_ID: $AWS_ACCOUNT_ID"
+          echo "ECR_REGISTRY: $ECR_REGISTRY"
+          echo "CLIENT_IMAGE: $CLIENT_IMAGE"
+          echo "WORKER_IMAGE: $WORKER_IMAGE"
+          echo "=========================================="
+          
+          # ===== STEP 3: Validate Variables =====
+          if [ -z "$AWS_ACCOUNT_ID" ] || [ -z "$ECR_REPOSITORY" ]; then
+            echo "ERROR: AWS_ACCOUNT_ID or ECR_REPOSITORY is empty!"
+            exit 1
+          fi
+          
+          # ===== STEP 4: Login to ECR =====
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | sudo docker login --username AWS --password-stdin $ECR_REGISTRY
+          
+          # ===== STEP 5: Write Environment File =====
+          cat << 'ENVEOF' > .env
+          ${{ secrets.ENV_FILE }}
+          ENVEOF
+          
+          # ===== STEP 6: Stop and Remove Old Containers =====
+          echo "Stopping previous containers..."
+          sudo docker-compose down || true
+          
+          echo "Removing previous images..."
+          sudo docker rmi $CLIENT_IMAGE || true
+          sudo docker rmi $WORKER_IMAGE || true
+          
+          # ===== STEP 7: Create production docker-compose.yml with ECR images =====
+          cat > docker-compose.prod.yml << 'COMPOSEEOF'
+          name: leetcode
+          services:
+            client: 
+              image: CLIENT_IMAGE_PLACEHOLDER
+              container_name: client
+              restart: unless-stopped
+              ports:
+                - '3000:3000'
+                - '5555:5555'
+              env_file:
+                - .env
+              environment:
+                - NODE_ENV=production
+                - DATABASE_URL=postgresql://postgres:postgres@db:5432/leetcode
+                - REDIS_URL=redis://redis:6379
+              depends_on:
+                postgres:
+                  condition: service_healthy
+                redis:
+                  condition: service_healthy
+            server:
+              image: WORKER_IMAGE_PLACEHOLDER
+              container_name: worker
+              restart: unless-stopped
+              ports:
+                - "8080:8080"
+              env_file:
+                - .env
+              environment:
+                - NODE_ENV=production
+                - DATABASE_URL=postgresql://postgres:postgres@db:5432/leetcode
+                - PORT=8080
+                - REDIS_URL=redis://redis:6379
+              depends_on:
+                postgres:
+                 condition: service_healthy
+                redis:
+                 condition: service_healthy
+
+            postgres:
+              image: postgres:16
+              container_name: db
+              restart: always
+              ports:
+                - "5432:5432"
+              environment:
+                POSTGRES_USER: postgres
+                POSTGRES_PASSWORD: postgres
+                POSTGRES_DB: leetcode
+              volumes:
+                - ./postgres:/var/lib/postgresql/data
+              healthcheck:
+                test: [ 'CMD-SHELL', 'pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}' ]
+                interval: 10s
+                timeout: 5s
+                retries: 5
+            redis:
+              image: redis
+              container_name: redis
+              ports:
+                - "6379:6379"
+              volumes:
+                - ./redis:/data
+              healthcheck:
+                test: [ "CMD", "redis-cli", "ping" ]
+                interval: 10s
+                timeout: 5s
+                retries: 5
+          COMPOSEEOF
+          
+          # Replace placeholders with actual image names
+          sed -i "s|CLIENT_IMAGE_PLACEHOLDER|$CLIENT_IMAGE|g" docker-compose.prod.yml
+          sed -i "s|WORKER_IMAGE_PLACEHOLDER|$WORKER_IMAGE|g" docker-compose.prod.yml
+          
+          # ===== STEP 8: Pull Latest Images =====
+          echo "Pulling latest images..."
+          sudo docker pull $CLIENT_IMAGE
+          sudo docker pull $WORKER_IMAGE
+          
+          # ===== STEP 9: Start Services with Docker Compose =====
+          echo "Starting services with docker-compose..."
+          sudo docker-compose -f docker-compose.prod.yml up -d
+          
+          echo "Pruning dangling images..."
+          sudo docker image prune -f
+          
+          echo "=========================================="
+          echo "Deployment completed successfully!"
+          sudo docker-compose -f docker-compose.prod.yml ps
+          echo "=========================================="
+

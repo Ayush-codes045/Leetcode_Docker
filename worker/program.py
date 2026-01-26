@@ -1,5 +1,8 @@
-import sys
-data = sys.stdin.read().strip().split()
-if len(data) >= 2:
-    a, b = map(int, data[:2])
-    print(a - b)
+# Read space-separated integers
+nums = list(map(int, input().split()))
+
+# Sum all elements
+total = sum(nums)
+
+# Output the result
+print(total)
