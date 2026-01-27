@@ -1,53 +1,37 @@
-# -----------------------------
 # 1. Base image
-# -----------------------------
 FROM node:22-slim
 
-# -----------------------------
-# 2. Set working directory
-# -----------------------------
+# 2. Working directory
 WORKDIR /app
 
-# -----------------------------
-# 3. Install system dependencies
-# -----------------------------
+# 3. System dependencies
 RUN apt-get update && \
     apt-get install -y python3 gcc g++ openjdk-17-jdk openssl && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# -----------------------------
-# 4. Copy package files & install dependencies
-# -----------------------------
+# 4. Copy package files
 COPY package.json package-lock.json ./
+
+# 5. Install ALL dependencies (including devDependencies)
+ENV NODE_ENV=development
 RUN npm install --force
 
-# -----------------------------
-# 5. Copy Prisma schema & generate client
-# -----------------------------
+# 6. Copy Prisma schema & generate client
 COPY prisma ./prisma
 RUN npx prisma generate
 
-# -----------------------------
-# 6. Copy the rest of the app
-# -----------------------------
+# 7. Copy app source
 COPY . .
 
-# -----------------------------
-# 7. Build frontend & Tailwind CSS
-# -----------------------------
-RUN npm run build        # Next.js production build
-# RUN npm run build:tailwind  # Tailwind CSS build
+# 8. Build Tailwind CSS first
+RUN npm run build:tailwind
 
-# -----------------------------
-# 8. Expose port
-# -----------------------------
+# 9. Build Next.js production
+RUN npm run build
+
+# 10. Expose port
 EXPOSE 3000
 
-# -----------------------------
-# 9. Start server with optional migrations
-# -----------------------------
-# If you want to apply Prisma migrations automatically on start, use the commented CMD
-# CMD ["sh", "-c", "npx prisma migrate deploy && npm run start"]
-
-# For standard production without auto-migrations:
+# 11. Production server
+ENV NODE_ENV=production
 CMD ["npm", "run", "start"]
