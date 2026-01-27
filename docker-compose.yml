@@ -15,7 +15,7 @@ services:
       - NODE_ENV=development
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/leetcode
       - REDIS_URL=redis://redis:6379
-      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_URL=http://35.154.69.25:3000
       - NEXTAUTH_SECRET="password_nextauth"
       - GOOGLE_CLIENT_ID=7973876185-nqbfg1vshbotao42guumv6fuj1t67dgr.apps.googleusercontent.com
       - GOOGLE_CLIENT_SECRET=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
