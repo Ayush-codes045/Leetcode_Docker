@@ -48,4 +48,4 @@ EXPOSE 3000
 # CMD ["sh", "-c", "npx prisma migrate deploy && npm run start"]
 
 # For standard production without auto-migrations:
-CMD ["npm", "run", "start"]
+CMD ["npm", "run", "dev"]
