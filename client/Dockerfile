@@ -15,6 +15,8 @@ RUN npx prisma generate
 
 COPY . .
 
+RUN npm run build
+
 EXPOSE 3000
 
 # For EC2 production: use start:prod (runs migrations and starts Next.js on 0.0.0.0:3000)
