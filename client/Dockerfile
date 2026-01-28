@@ -14,9 +14,6 @@ RUN  npm install -f
 RUN npx prisma generate
 
 COPY . .
-#new
-# Build the Next.js app
-RUN npm run build
 
 EXPOSE 3000
 
