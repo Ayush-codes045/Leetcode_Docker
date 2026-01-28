@@ -45,32 +45,72 @@ export const NEXT_AUTH = {
     error: "/signin",
   },
   callbacks: {
-    async jwt({ token, account, profile }: any) {
-      token.UserId = token.sub;
+    async jwt({ token, user, account }: any) {
+      // Runs at login
+  
+      if (user) {
+        // Credentials login already returns DB user
+        token.userId = user.id;
+      }
+  
+      // OAuth login (Google/GitHub)
+      if (account && account.provider !== "credentials") {
+        const existingUser = await prisma.user.findUnique({
+          where: { email: token.email! },
+        });
+  
+        if (existingUser) {
+          token.userId = existingUser.id;
+        } else {
+          const newUser = await prisma.user.create({
+            data: {
+              email: token.email!,
+              username: token.email!,
+              image: token.picture,
+            },
+          });
+          token.userId = newUser.id;
+        }
+      }
+  
       return token;
     },
-    async session({ session, token, user }: any) {
-      session.user.id = token.UserId;
+  
+    async session({ session, token }: any) {
+      if (session.user) {
+        session.user.id = token.userId as string; // ✅ Always DB ID
+      }
       return session;
     },
-    async signIn({ user, account, profile }: any) {
-      const userData = await prisma.user.findFirst({
-        where: {
-          id: user.id,
-        },
-      });
-      if (!userData) {
-        const data = await prisma.user.create({
-          data: {
-            id: user.id,
-            email: user.email,
-            username: user.email,
-            image: user.image,
-          },
-        });
-      }
-      return true;
-    },
-  },
+  }
+  
+  // callbacks: {
+  //   async jwt({ token, account, profile }: any) {
+  //     token.UserId = token.sub;
+  //     return token;
+  //   },
+  //   async session({ session, token, user }: any) {
+  //     session.user.id = token.UserId;
+  //     return session;
+  //   },
+  //   async signIn({ user, account, profile }: any) {
+  //     const userData = await prisma.user.findFirst({
+  //       where: {
+  //         id: user.id,
+  //       },
+  //     });
+  //     if (!userData) {
+  //       const data = await prisma.user.create({
+  //         data: {
+  //           id: user.id,
+  //           email: user.email,
+  //           username: user.email,
+  //           image: user.image,
+  //         },
+  //       });
+  //     }
+  //     return true;
+  //   },
+  // },
 };
 
