@@ -46,14 +46,32 @@ const RegisterTab = () => {
   });
 
   // 2. Define a submit handler.
+  // async function onSubmit(values: z.infer<typeof formSchema>) {
+  //   const val = RegisterTypes.safeParse(values)
+  //   if (!val.success) {
+  //     return
+  //   }
+  //   await Register(values)
+  //   const {email,password} = val.data
+  //   await signIn("credentials", {email, password, callbackUrl: "/"})
+  // }
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     const val = RegisterTypes.safeParse(values)
     if (!val.success) {
       return
     }
     await Register(values)
-    const {email,password} = val.data
-    await signIn("credentials", {email, password, callbackUrl: "/"})
+    const {email, password} = val.data
+    
+    // Use window.location.origin to get the current domain
+    const callbackUrl = `${window.location.origin}/`
+    await signIn("credentials", {
+      email, 
+      password, 
+      callbackUrl,
+      redirect: true
+    })
   }
   return (
     <AlertDialogDescription>
