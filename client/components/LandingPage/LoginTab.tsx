@@ -38,21 +38,11 @@ const LoginTab = () => {
   });
 
   // 2. Define a submit handler.
-  // async function onSubmit(values: z.infer<typeof formSchema>) {
-  //   const {email,password} = values
-  //   signIn("credentials", { email,password, callbackUrl: "/"})
-  // }
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    const {email, password} = values
-    
-    // Use window.location.origin
-    const callbackUrl = `${window.location.origin}/`
-    await signIn("credentials", {
-      email,
-      password, 
-      callbackUrl
-    })
+    const {email,password} = values
+    signIn("credentials", { email,password, callbackUrl: "/"})
   }
+
   return (
     <AlertDialogDescription>
     <Form {...form}>
