@@ -8,13 +8,17 @@ services:
     ports:
       - '3000:3000'
       - '5555:5555'
-    volumes:
-      - ./client:/app
-      - /usr/src/app/node_modules
+    # Comment out volumes for EC2 production (uncomment for local development)
+    # volumes:
+    #   - ./client:/app
+    #   - /usr/src/app/node_modules
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
+      - PORT=3000
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/leetcode
       - REDIS_URL=redis://redis:6379
+      # IMPORTANT: Replace YOUR_EC2_PUBLIC_IP with your actual EC2 public IPv4 address
+      # Example: http://54.123.45.67:3000
       - NEXTAUTH_URL=http://35.154.69.25:3000
       - NEXTAUTH_SECRET="password_nextauth"
       - GOOGLE_CLIENT_ID=7973876185-nqbfg1vshbotao42guumv6fuj1t67dgr.apps.googleusercontent.com
@@ -33,10 +37,11 @@ services:
     container_name: worker
     ports:
       - "8080:8080"
-    volumes:
-      - ./worker:/app
+    # Comment out volumes for EC2 production (uncomment for local development)
+    # volumes:
+    #   - ./worker:/app
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/leetcode
       - PORT=8080
       - REDIS_URL=redis://redis:6379

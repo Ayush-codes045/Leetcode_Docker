@@ -20,4 +20,5 @@ RUN npm run build
 
 EXPOSE 3000
 
-CMD ["npm", "run", "dev:docker"]
+# For EC2 production: use start:prod (runs migrations and starts Next.js on 0.0.0.0:3000)
+CMD ["npm", "run", "start:prod"]
