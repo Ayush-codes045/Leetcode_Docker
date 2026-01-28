@@ -20,5 +20,4 @@ RUN npm run build
 
 EXPOSE 3000
 
-# Use production start command
-CMD ["npm", "run", "start:prod"]
+CMD ["npm", "run", "dev:docker"]
